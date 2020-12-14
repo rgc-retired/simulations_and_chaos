@@ -1,0 +1,10 @@
+Lua_noprint Elapsed 2.730000
+Lua_noprint Elapsed 2.730000
+Lua_noprint Elapsed 2.720000
+Lua_noprint Elapsed 2.720000
+Lua_noprint Elapsed 2.730000
+Lua_noprint Elapsed 2.730000
+Lua_noprint Elapsed 2.730000
+Lua_noprint Elapsed 2.720000
+Lua_noprint Elapsed 2.720000
+Lua_noprint Elapsed 2.730000

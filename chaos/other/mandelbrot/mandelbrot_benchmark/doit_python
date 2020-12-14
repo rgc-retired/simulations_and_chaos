@@ -1,0 +1,10 @@
+python -E mandelbrot.py >  results_python.txt
+python -E mandelbrot.py >> results_python.txt
+python -E mandelbrot.py >> results_python.txt
+python -E mandelbrot.py >> results_python.txt
+python -E mandelbrot.py >> results_python.txt
+python -E mandelbrot.py >> results_python.txt
+python -E mandelbrot.py >> results_python.txt
+python -E mandelbrot.py >> results_python.txt
+python -E mandelbrot.py >> results_python.txt
+python -E mandelbrot.py >> results_python.txt

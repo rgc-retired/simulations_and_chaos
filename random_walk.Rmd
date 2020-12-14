@@ -1,0 +1,131 @@
+---
+title: "Random Walk"
+author: "R. G. Cronce"
+date: "9/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Random Walk Simulation
+
+[R-bloggers article on Random Walks](https://www.r-bloggers.com/simulating-paths-from-a-random-walk)
+
+A random walk is established based on a walk of +/- 1 with a probability of p, 1-p until the
+walk exceeds an upper or lower limit.  The semi-interesting part of the simulation is that
+when p differs from 0.5 (even by a small amount), the walk terminates positive or negative
+with a very high skew.  A closed form solution for the expected result is included at the
+website.
+
+BTW it was very nice to read an article that didn't require the tidyverse and 8 million additional
+packages just to play with a nice simple problem!
+
+
+```{r baseline}
+
+# returns the random walk path values as a vector 
+# (random walk always starts at 0)
+# p: probability of increasing by 1
+# stop if path value hits either `lower` or `upper`
+run <- function(p, lower, upper) {
+    values <- c(0)
+    current <- 0
+    while (current > lower & current < upper) {
+        current <- current + ifelse(runif(1) < p, 1, -1)
+        values <- c(values, current)
+    }
+    values
+}
+
+N <- 100  # no. of paths to simulate
+p <- 0.48
+lower <- -50
+upper <- 50
+
+# simulate paths
+set.seed(1055)
+# set.seed(2020)
+vlist <- replicate(N, run(p, lower, upper))
+
+# get length of longest path
+max_length <- max(sapply(vlist, length))
+
+# make plot
+par(mar = rep(0, 4))  # no margins
+plot(c(1, max_length), c(lower, upper), type = "n")
+for (i in 1:N) {
+    lines(1:length(vlist[[i]]), vlist[[i]])
+}
+abline(h = 0, lty = "dashed")
+abline(h = lower, lwd = 2)
+abline(h = upper, lwd = 2)
+
+```
+
+## Adding colors
+
+The plot above is difficult to interpret.  It would be better to color all the paths
+that terminate positive in one color and all the paths that terminate negative in
+another.  This is shown below:
+
+```{r twocolor}
+par(mar = rep(0, 4))  # no margins
+plot(c(1, max_length), c(lower, upper), type = "n")
+for (i in 1:N) {
+    l = length(vlist[[i]])
+    if (vlist[[i]][l]>0) { lcolor='green' } else { lcolor='red' }
+    lines(1:length(vlist[[i]]), vlist[[i]],col=lcolor)
+}
+abline(h = 0, lty = "dashed")
+abline(h = lower, lwd = 2)
+abline(h = upper, lwd = 2)
+
+```
+
+
+## Adding shades of color
+
+The code from the Website actually adjusts the color of the plot based on the direction
+of the path and the length of the path (compared to the maximum length path).
+
+```{r shaded}
+
+# Note that I modified the code to use path_length instead of the single character
+# variable name, l, used on the website since I misread lower case l as digit 1 when
+# I was reading the code.  Never, ever use lower case l as a variable!!!
+#
+# Paths heading toward the lower limit will vary in color from ls_color to ll_color
+# as the path gets longer.  Paths heading toward the uppper limit will vary from
+# us_color to ul_color as the path gets longer.
+
+colorPicker <- function(values, max_length,
+                        ls_color = c(178, 34, 34), ll_color = c(255, 204, 0),
+                        us_color = c(0, 0, 102), ul_color = c(102, 204, 225)) {
+    path_length <- length(values)
+    if (values[path_length] < 0) {
+        rgb_values <- (ls_color + (ll_color - ls_color) * path_length / max_length) / 255
+    } else {
+        rgb_values <- (us_color + (ul_color - us_color) * path_length / max_length) / 255
+    }
+    rgb(rgb_values[1], rgb_values[2], rgb_values[3])
+}
+
+par(mar = rep(0, 4))  # no margins
+plot(c(1, max_length), c(lower, upper), type = "n")
+for (i in 1:N) {
+    lines(1:length(vlist[[i]]), vlist[[i]], 
+          col = colorPicker(vlist[[i]], max_length), lwd = 0.5)
+}
+
+abline(h = 0, lty = "dashed")
+abline(h = lower, lwd = 2)
+abline(h = upper, lwd = 2)
+
+```
+
+
+## End of the Report
+
+QED

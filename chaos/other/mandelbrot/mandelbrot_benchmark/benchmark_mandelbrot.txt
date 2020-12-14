@@ -1,0 +1,1118 @@
+[timestretc]
+
+Tags
+
+  * tutorial (3)
+  * 3D (2)
+  * ruby (2)
+  * structure synth (2)
+  * assembler (2)
+  * generative (2)
+  * sunflow (2)
+  * passenger (1)
+  * mandelbrot (1)
+  * crash (1)
+  * music (1)
+  * dj (1)
+  * php (1)
+  * bpm (1)
+  * sinatra (1)
+  * lua (1)
+  * containers (1)
+  * tempo (1)
+  * artwork (1)
+  * hemeshgui (1)
+  * osx (1)
+  * hemesh (1)
+  * apache2 (1)
+  * mix (1)
+  * deployment (1)
+  * eiesenscript (1)
+  * processing (1)
+  * fractal (1)
+  * sandbox (1)
+  * app (1)
+  * lion (1)
+  * java (1)
+  * perl (1)
+  * jmp (1)
+  * python (1)
+  * benchmark (1)
+  * asm (1)
+
+RSS
+
+Ruby, Io, PHP, Python, Lua, Java, Perl, Applescript, TCL, ELisp, Javascript, OCaml, Ghostscript, and C Fractal
+Benchmark
+
+2007-06-08
+
+I have always enjoyed fractals, and was curious if scripting languages were up to the task. I wrote a very simple
+Mandelbrot set generator for my test. Rather than optimizing for each language, I tried to write each program in
+approximately the same way in each language to make a reasonable performance comparison.
+
+Here are the results from running on my 867 mhz Powerbook G4. Shorter is better. Please note, the following
+benchmarks are not scientific, and were simply done to satisfy my curiosity. Your mileage may vary.
+
+Feel free to send me ports to any other languages. The program should print the time in seconds that elapsed at
+the bottom in the form of 'Elapsed %0.2f'. If you can, include instructions for building on MacOS X.
+? Erik Wrenholt (erik -at- timestretch.com) 2005-09-20
+
+
+          Language             Time                                       Relative
+                              Seconds                                       Time
+
+C gcc-4.0.1                      0.05                                        1.00 x
+
+ocaml compiled 3.09.2            0.05                                        1.00 x
+
+SBCL 1.0.2                       0.13                                        2.55 x
+
+Java 1.4.2                       0.40                                        8.00 x
+
+Io 20070410 Vector               1.40                                       28.09 x
+
+Lua 5.1                          1.50                                       30.00 x
+
+ocaml bytecode 3.09.2            3.76                                       75.15 x
+
+Python 2.5.1                     9.99                                      199.80 x
+
+Ghostscript 8.51                11.66                                      233.12 x
+
+Perl 5.8.6 Optimized            12.37                                      247.34 x
+
+TCL 8.4 Optimized               16.00                                      320.00 x
+
+Perl 5.8.6                      21.75                                      435.00 x
+
+PHP 5.1.4                       23.12                                      462.40 x
+
+Javascript SpiderMonkey v1.6    31.06                                      621.27 x
+
+Ruby 1.8.4                      34.31                                      686.18 x
+
+Emacs Lisp                      47.25                                      945.00 x
+
+Applescript                     71.75                                     1435.00 x
+
+Io 20070410                     85.26                                     1705.13 x
+
+2007-06-08 ? I enabled optimization in C. 'gcc -O3 Mandelbrot.c -o Mandelbrot.'
+
+2007-06-04 ? I added a compiled OCAml version. Faster than both C and SBCL!
+
+2007-06-02 ? I updated the C version to utilize doubles instead of floats. Most scripting languages use doubles
+behind-the-scenes so this results in a more accurate comparision.
+
+I updated Python to 2.5.1. Much faster!
+
+I also began including speed relative to the fastest language.
+
+2007-06-02 ? I fixed up the Java, Ruby, Lua, Io, PHP, and Applescript versions. They were calculating one extra
+row and column (less than or equal to 39 rather than just less than). It turns out this didn't affect performance
+that much because those columns are over a low-iteration area.
+
+I also starting running each language four times and averaging the time elapsed in order to make the results more
+consistent.
+
+2007-05-28 ? I added a SBCL Lisp version. Unfortunately, SBCL triggers a crash report on MacOS X every time I
+invoke it. SBCL's actual performance may vary slightly from the results shown.
+
+2007-05-27 ? I added a Ghostscript Postscript version.
+
+2007-05-26 ? I added an OCaml and Javascript (Using Mozilla's SpiderMonkey 1.6). I also removed the 'slow' TCL
+version and left the optimized one. After adding curly brackets around expressions, it increased the speed by 25
+times.
+
+2007-04-26 ? I added an Applescript version.
+
+2007-04-24 ? Just for fun, I'm including optimized versions that don't change the character of the code (e.g. no
+loop unrolling). I received both Perl and TCL optimized versions and have included them in the benchmark. It's
+interesting to see how minor changes can drastically improve the performance of these scripts. If you notice
+something glaringly inefficient in one of the examples below, let me know.
+
+2007-04-03 ? I temporarily removed the Haskell version while I learn how to get it to print 'Elapsed <seconds>'.
+Anders Bergh ported the scripts on this page to D, C#. When I am able to run them from the command line, I'll add
+them to this page. Also pending are a Javascript, and a CL version.
+
+Benchmark Generated on 2007-06-08 21:11:16
+
+C gcc-4.0.1
+
+// by Erik Wrenholt
+#include <stdio.h>
+#include <sys/time.h>
+
+#define BAILOUT 16
+#define MAX_ITERATIONS 1000
+
+int mandelbrot(double x, double y)
+{
+        double cr = y - 0.5;
+        double ci = x;
+        double zi = 0.0;
+        double zr = 0.0;
+        int i = 0;
+
+        while(1) {
+                i ++;
+                double temp = zr * zi;
+                double zr2 = zr * zr;
+                double zi2 = zi * zi;
+                zr = zr2 - zi2 + cr;
+                zi = temp + temp + ci;
+                if (zi2 + zr2 > BAILOUT)
+                        return i;
+                if (i > MAX_ITERATIONS)
+                        return 0;
+        }
+
+}
+
+int main (int argc, const char * argv[]) {
+        struct timeval aTv;
+        gettimeofday(&aTv, NULL);
+        long init_time = aTv.tv_sec;
+        long init_usec = aTv.tv_usec;
+
+        int x,y;
+        for (y = -39; y < 39; y++) {
+                printf("\n");
+                for (x = -39; x < 39; x++) {
+                        int i = mandelbrot(x/40.0, y/40.0);
+                        if (i==0)
+                                printf("*");
+                        else
+                                printf(" ");
+                }
+        }
+        printf ("\n");
+
+        gettimeofday(&aTv,NULL);
+        double query_time = (aTv.tv_sec - init_time) + (double)(aTv.tv_usec - init_usec)/1000000.0;
+        printf ("C Elapsed %0.2f\n", query_time);
+    return 0;
+}
+
+Java 1.4.2
+
+// by Erik Wrenholt
+import java.util.*;
+
+class Mandelbrot
+{
+        static int BAILOUT = 16;
+        static int MAX_ITERATIONS = 1000;
+
+        private static int iterate(float x, float y)
+        {
+                float cr = y-0.5f;
+                float ci = x;
+                float zi = 0.0f;
+                float zr = 0.0f;
+                int i = 0;
+                while (true) {
+                        i++;
+                        float temp = zr * zi;
+                        float zr2 = zr * zr;
+                        float zi2 = zi * zi;
+                        zr = zr2 - zi2 + cr;
+                        zi = temp + temp + ci;
+                        if (zi2 + zr2 > BAILOUT)
+                                return i;
+                        if (i > MAX_ITERATIONS)
+                                return 0;
+                }
+        }
+
+        public static void main(String args[])
+        {
+                Date d1 = new Date();
+                int x,y;
+                for (y = -39; y < 39; y++) {
+                        System.out.print("\n");
+                        for (x = -39; x < 39; x++) {
+                                if (iterate(x/40.0f,y/40.0f) == 0)
+                                        System.out.print("*");
+                                else
+                                        System.out.print(" ");
+
+                        }
+                }
+                Date d2 = new Date();
+                long diff = d2.getTime() - d1.getTime();
+                System.out.println("\nJava Elapsed " + diff/1000.0f);
+
+        }
+}
+
+Io 20070410 Vector
+
+#!/usr/local/bin/io
+
+# Vectorized by Steve Dekorte
+
+printSet := method(
+    bailout := 16
+    max_iterations := 1000
+
+    cr := Vector clone
+    ci := Vector clone
+
+    i := 0
+    for(y, -39, 38,
+        for(x, -39, 38,
+            cr atPut(i, y/40.0 - 0.5)
+            ci atPut(i, (x/40.0))
+            i = i + 1
+        )
+    )
+
+    size := cr size
+
+    zi := Vector clone setSize(size)
+    zr := Vector clone setSize(size)
+    zr2 := Vector clone setSize(size)
+    zi2 := Vector clone setSize(size)
+    temp := Vector clone setSize(size)
+
+    for(i, 1, max_iterations,
+        temp copy(zr) *= zi
+
+        zr2 copy(zr) square
+        zi2 copy(zi) square
+
+        zr copy(zr2) -= zi2
+        zr += cr
+        zi copy(temp) *= 2
+        zi += ci
+    )
+
+    result := zi2 + zr2
+
+    i := 0
+    for(y, -39, 38,
+        writeln
+        for(x, -39, 38,
+            r := result at(i)
+            write(if( r > 0, "*", " "))
+            i = i + 1
+        )
+    )
+)
+
+writeln("\nIo Elapsed " .. Date secondsToRun(printSet))
+
+Lua 5.1
+
+#!/usr/local/bin/lua
+
+-- By Erik Wrenholt
+
+local BAILOUT = 16
+local MAX_ITERATIONS = 1000
+
+function iterate(x,y)
+
+        local cr = y-0.5
+        local ci = x
+        local zi = 0.0
+        local zr = 0.0
+        local i = 0
+
+        while 1 do
+                i = i+1
+                local temp = zr * zi
+                local zr2 = zr*zr
+                local zi2 = zi*zi
+                zr = zr2-zi2+cr
+                zi = temp+temp+ci
+                if (zi2+zr2 > BAILOUT) then
+                        return i
+                end
+
+                if (i > MAX_ITERATIONS) then
+                        return 0
+                end
+        end
+
+end
+
+function mandelbrot()
+        local t = os.time()
+        for y = -39, 38 do
+                for x = -39, 38 do
+                        if (iterate(x/40.0, y/40) == 0) then
+                                io.write("*")
+                        else
+                                io.write(" ")
+                        end
+                end
+                io.write("\n")
+        end
+        io.write(string.format("Time Elapsed %d\n", os.time() - t))
+end
+
+mandelbrot()
+
+ocaml compiled 3.09.2
+
+(* Courtesy of pango on #ocaml *)
+
+let bailout = 16.
+let max_iterations = 1000
+
+let mandelbrot x y =
+  let cr = y -. 0.5 in
+  let ci = x in
+  let zi = ref 0.0 in
+  let zr = ref 0.0 in
+  let i = ref 0 in
+  let continue = ref true in
+  let result = ref 0 in
+  while !continue do
+    incr i;
+    let temp = !zr *. !zi in
+    let zr2 = !zr *. !zr in
+    let zi2 = !zi *. !zi in
+    zr := zr2 -. zi2 +. cr;
+    zi := temp +. temp +. ci;
+    if zi2 +. zr2 > bailout then begin
+      result := !i;
+      continue := false;
+    end
+    else if !i > max_iterations then
+      continue := false;
+  done;
+  !result
+
+let () =
+  let start_time = Unix.gettimeofday () in
+  for y = -39 to 38 do
+    print_newline ();
+    for x = -39 to 38 do
+      let i = mandelbrot (float x /. 40.) (float y /. 40.) in
+      print_char (if i = 0 then '*' else ' ');
+    done
+  done;
+  print_newline ();
+  let stop_time = Unix.gettimeofday () in
+  let query_time = stop_time -. start_time in
+  Printf.printf "OCaml Elapsed %0.2f\n" query_time
+
+ocaml bytecode 3.09.2
+
+#!/opt/local/bin/ocamlrun ocaml unix.cma
+(* Courtesy of pango on #ocaml *)
+
+let bailout = 16.
+let max_iterations = 1000
+
+let mandelbrot x y =
+  let cr = y -. 0.5 in
+  let ci = x in
+  let zi = ref 0.0 in
+  let zr = ref 0.0 in
+  let i = ref 0 in
+  let continue = ref true in
+  let result = ref 0 in
+  while !continue do
+    incr i;
+    let temp = !zr *. !zi in
+    let zr2 = !zr *. !zr in
+    let zi2 = !zi *. !zi in
+    zr := zr2 -. zi2 +. cr;
+    zi := temp +. temp +. ci;
+    if zi2 +. zr2 > bailout then begin
+      result := !i;
+      continue := false;
+    end
+    else if !i > max_iterations then
+      continue := false;
+  done;
+  !result
+
+let () =
+  let start_time = Unix.gettimeofday () in
+  for y = -39 to 38 do
+    print_newline ();
+    for x = -39 to 38 do
+      let i = mandelbrot (float x /. 40.) (float y /. 40.) in
+      print_char (if i = 0 then '*' else ' ');
+    done
+  done;
+  print_newline ();
+  let stop_time = Unix.gettimeofday () in
+  let query_time = stop_time -. start_time in
+  Printf.printf "OCaml Elapsed %0.2f\n" query_time
+
+Python 2.5.1
+
+#!/usr/local/bin/python
+# by Daniel Rosengren
+
+import sys, time
+stdout = sys.stdout
+
+BAILOUT = 16
+MAX_ITERATIONS = 1000
+
+class Iterator:
+  def __init__(self):
+    print 'Rendering...'
+    for y in range(-39, 39):
+      stdout.write('\n')
+      for x in range(-39, 39):
+        i = self.mandelbrot(x/40.0, y/40.0)
+
+        if i == 0:
+          stdout.write('*')
+        else:
+          stdout.write(' ')
+
+  def mandelbrot(self, x, y):
+    cr = y - 0.5
+    ci = x
+    zi = 0.0
+    zr = 0.0
+    i = 0
+
+    while True:
+      i += 1
+      temp = zr * zi
+      zr2 = zr * zr
+      zi2 = zi * zi
+      zr = zr2 - zi2 + cr
+      zi = temp + temp + ci
+
+      if zi2 + zr2 > BAILOUT:
+        return i
+      if i > MAX_ITERATIONS:
+        return 0
+
+t = time.time()
+Iterator()
+print '\nPython Elapsed %.02f' % (time.time() - t)
+
+
+Ghostscript 8.51
+
+%!PS
+%% frac.ps by Jeff Zaroyko
+%% a transliteration of the program by Erik Wrenholt
+%% at http://www.timestretch.com/FractalBenchmark.html
+/star {(*) print } bind def
+/space { ( ) print } bind def
+realtime pop
+
+/BAILOUT 16 def
+/MAX_ITERATIONS 1000 def
+
+/mandelbrot { %% mx my
+    /mx exch def
+    /my exch def
+
+    /cr my 0.5 sub def
+    /ci mx def
+    /zi 0.0 def
+    /zr 0.0 def
+    /i 0 def
+
+    {
+     /i i 1 add def
+     /temp zr zi mul def
+     /zr2 zr zr mul def
+     /zi2 zi zi mul def
+     /zr zr2 zi2 sub cr add def
+     /zi temp temp add ci add def
+     zi2 zr2 add BAILOUT gt
+         {
+             i exit
+         } if
+     i MAX_ITERATIONS gt
+         {
+             0 exit
+         } if
+    } loop
+} bind def
+
+% main
+
+/y -39 def
+{
+    y 39 lt
+    {
+        /y y 1 add def
+        (\n) print
+
+        /x -39 def
+        {
+            x 39 lt
+            {
+                /x x 1 add def
+                y 40.0 div x 40.0 div mandelbrot
+                0 eq { star  } { space  } ifelse
+            } { exit } ifelse
+        } loop
+    } { exit }ifelse  % Done.
+} loop
+
+realtime dup log ceiling cvi string cvs
+(\nTotal time Elapsed ) print print (ms\n) print
+quit
+
+
+Perl 5.8.6 Optimized
+
+#!/usr/bin/perl
+# Ported from C to Perl by Anders Bergh <anders1@gmail.com>
+# Some Perlification by John Gabriele (4-24-2007).
+
+use strict;
+use warnings;
+use Time::HiRes qw( gettimeofday );
+
+my $BAILOUT = 16;
+my $MAX_ITERATIONS = 1000;
+my $begin = gettimeofday();
+
+sub mandelbrot {
+    my ( $x, $y ) = @_;
+
+    my $cr = $y - 0.5;
+    my $ci = $x;
+    my ( $zi, $zr ) = ( 0.0, 0.0 );
+    my $i = 0;
+
+    my ( $temp, $zr2, $zi2 );
+    while ( 1 ) {
+        $i += 1;
+        $temp = $zr * $zi;
+        $zr2  = $zr * $zr;
+        $zi2  = $zi * $zi;
+        $zr = $zr2 - $zi2 + $cr;
+        $zi = $temp + $temp + $ci;
+        if ( $zi2 + $zr2 > $BAILOUT ) {
+            return $i;
+        }
+        if ( $i > $MAX_ITERATIONS ) {
+            return 0;
+        }
+    }
+}
+
+for ( my $y = -39; $y < 39; $y++ ) {
+    print( "\n" );
+    my $i;
+    for ( my $x = -39; $x < 39; $x++ ) {
+        $i = mandelbrot( $x / 40.0, $y / 40.0 );
+        if ( $i == 0 ) {
+            print q{*};
+        }
+        else {
+            print q{ };
+        }
+    }
+}
+
+print "\n";
+my $end = gettimeofday() - $begin;
+print "Perl Elapsed $end\n";
+
+Perl 5.8.6
+
+#!/usr/bin/perl
+# Ported from C to Perl by Anders Bergh <anders1@gmail.com>
+#
+
+$BAILOUT=16;
+$MAX_ITERATIONS=1000;
+
+$begin = time();
+
+sub mandelbrot {
+       local $x = $_[0];
+       local $y = $_[1];
+
+       local $cr = $y - 0.5;
+       local $ci = $x;
+       local $zi = 0.0;
+       local $zr = 0.0;
+       local $i = 0;
+
+       while (1)
+       {
+               $i = $i + 1;
+               local $temp = $zr * $zi;
+               local $zr2 = $zr * $zr;
+               local $zi2 = $zi * $zi;
+               $zr = $zr2 - $zi2 + $cr;
+               $zi = $temp + $temp + $ci;
+               if ($zi2 + $zr2 > $BAILOUT)
+               {
+                       return $i;
+               }
+               if ($i > $MAX_ITERATIONS)
+               {
+                       return 0;
+               }
+       }
+}
+
+for ($y = -39; $y < 39; $y++)
+{
+       print("\n");
+       for ($x = -39; $x < 39; $x++)
+       {
+               $i = mandelbrot($x/40.0, $y/40.0);
+               if ($i == 0)
+               {
+                       print("*");
+               }
+               else
+               {
+                       print(" ");
+               }
+       }
+}
+print("\n");
+
+$end = time() - $begin;
+
+print "Perl Elapsed $end\n";
+
+
+PHP 5.1.4
+
+#!/usr/local/php5/bin/php
+<?php
+define("BAILOUT",16);
+define("MAX_ITERATIONS",1000);
+
+class Mandelbrot
+{
+
+
+        function Mandelbrot()
+        {
+                $d1 = microtime(1);
+                for ($y = -39; $y < 39; $y++) {
+                        echo("\n");
+                        for ($x = -39; $x < 39; $x++) {
+                                if ($this->iterate($x/40.0,$y/40.0) == 0)
+                                        echo("*");
+                                else
+                                        echo(" ");
+
+                        }
+                }
+                $d2 = microtime(1);
+                $diff = $d2 - $d1;
+                printf("\nPHP Elapsed %0.2f", $diff);
+        }
+
+        function iterate($x,$y)
+        {
+                $cr = $y-0.5;
+                $ci = $x;
+                $zi = 0.0;
+                $zr = 0.0;
+                $i = 0;
+                while (true) {
+                        $i++;
+                        $temp = $zr * $zi;
+                        $zr2 = $zr * $zr;
+                        $zi2 = $zi * $zi;
+                        $zr = $zr2 - $zi2 + $cr;
+                        $zi = $temp + $temp + $ci;
+                        if ($zi2 + $zr2 > BAILOUT)
+                                return $i;
+                        if ($i > MAX_ITERATIONS)
+                                return 0;
+                }
+
+        }
+
+
+}
+
+$m = new Mandelbrot();
+?>
+
+Ruby 1.8.4
+
+#!/usr/local/bin/ruby
+
+BAILOUT = 16
+MAX_ITERATIONS = 1000
+
+class Mandelbrot
+
+        def initialize
+                puts "Rendering"
+                for y in -39...39 do
+                        puts
+                        for x in -39...39 do
+                                i = iterate(x/40.0,y/40.0)
+                                if (i == 0)
+                                        print "*"
+                                else
+                                        print " "
+                                end
+                        end
+                end
+        end
+
+        def iterate(x,y)
+                cr = y-0.5
+                ci = x
+                zi = 0.0
+                zr = 0.0
+                i = 0
+
+                while(1)
+                        i += 1
+                        temp = zr * zi
+                        zr2 = zr * zr
+                        zi2 = zi * zi
+                        zr = zr2 - zi2 + cr
+                        zi = temp + temp + ci
+                        return i if (zi2 + zr2 > BAILOUT)
+                        return 0 if (i > MAX_ITERATIONS)
+                end
+
+        end
+
+end
+
+time = Time.now
+Mandelbrot.new
+puts
+puts "Ruby Elapsed %f" % (Time.now - time)
+
+Javascript SpiderMonkey v1.6
+
+#!/usr/local/bin/js
+/* Javascript version by Patrick Haller.*/
+
+function mandelbrot(x, y) {
+        var cr = y - 0.5;
+        var ci = x;
+        var zi = 0.0;
+        var zr = 0.0;
+        var i = 0;
+        var BAILOUT = 16;
+        var MAX_ITERATIONS = 1000;
+
+        while(1) {
+                i++;
+                var temp = zr * zi;
+                var zr2 = zr * zr;
+                var zi2 = zi * zi;
+                zr = zr2 - zi2 + cr;
+                zi = temp + temp + ci;
+                if (zi2 + zr2 > BAILOUT) {
+                        return i;
+                }
+                if (i > MAX_ITERATIONS) {
+                        return 0;
+                }
+        }
+}
+
+function mandelbrot_run() {
+        var x; var y;
+        output = "";
+
+        var date = new Date();
+        for (y = -39; y < 39; y++) {
+                print(output);
+                output = "";
+                for (x = -39; x < 39; x++) {
+                        var i = mandelbrot(x/40.0, y/40.0);
+                        if (i==0) {
+                                output += "*";
+                        }
+                        else {
+                                output += " ";
+                        }
+                }
+        }
+        var date2 = new Date();
+        output += "\nJavaScript Elapsed " + (date2.getTime() - date.getTime()) / 1000;
+        print(output);
+        return false;
+}
+
+mandelbrot_run();
+
+TCL 8.4 Optimized
+
+#!/usr/bin/tclsh
+
+# Optimized Version by Samuel Zafrany
+
+# Ported from C by Anders Bergh <anders1@gmail.com>
+package require Tcl 8.4
+
+set BAILOUT 16
+set MAX_ITERATIONS 1000
+
+proc mandelbrot {x y} {
+       global BAILOUT
+       global MAX_ITERATIONS
+
+       set cr [expr {$y - 0.5}]
+       set ci $x
+       set zi 0.0
+       set zr 0.0
+       set i 0
+
+       while {1} {
+               incr i
+               set temp [expr {$zr * $zi}]
+               set zr2 [expr {$zr * $zr}]
+               set zi2 [expr {$zi * $zi}]
+               set zr [expr {$zr2 - $zi2 + $cr}]
+               set zi [expr {$temp + $temp + $ci}]
+
+               if {$zi2 + $zr2 > $BAILOUT} {
+                       return $i
+               }
+
+               if {$i > $MAX_ITERATIONS} {
+                       return 0
+               }
+       }
+}
+
+set begin [clock clicks -milliseconds]
+
+for {set y -39} {$y < 39} {incr y} {
+       puts ""
+       for {set x -39} {$x < 39} {incr x} {
+               set i [mandelbrot [expr {$x / 40.0}] [expr {$y / 40.0}]]
+
+               if {$i == 0} {
+                       puts -nonewline "*"
+               } else {
+                       puts -nonewline " "
+               }
+               flush stdout
+       }
+}
+puts ""
+
+set diff [expr [clock clicks -milliseconds] - $begin]
+#puts "Tcl Elapsed [expr int($diff / 1000)] seconds ($diff ms)"
+puts "Tcl Elapsed [expr int($diff / 1000)]"
+
+Emacs Lisp
+
+; By Erik Wrenholt
+; emacs -l Mandelbrot.lisp -batch
+
+(defun iterate (xx yy)
+
+        (let*
+        (
+                (BAILOUT 16.0)
+                (MAX_ITERATIONS 1000)
+                (bail_val 0)
+                (cr (- yy 0.5))
+                (ci xx)
+                (zi 0.0)
+                (zr 0.0)
+                (i 0)
+        )
+        (while (and (< i MAX_ITERATIONS) (< bail_val BAILOUT))
+                (setq i (+ 1 i))
+                (setq temp (* zr zi))
+                (setq zr2 (* zr zr))
+                (setq zi2 (* zi zi))
+                (setq zr (+ (- zr2 zi2) cr))
+                (setq zi (+ temp temp ci))
+
+                (setq bail_val (+ zi2 zr2)))
+        i)
+)
+
+(defun mandelbrot()
+(setq yy -39)
+(while (< yy 39)
+  (setq yy (+ 1 yy))
+
+  (setq xx -39)
+  (while (< xx 39)
+    (setq xx (+ 1 xx))
+
+    (if (= (iterate (/ xx 40.0) (/ yy 40.0)) 1000)
+                (princ  "*")
+                (princ  " ")
+   )
+)
+(princ  "\n")
+))
+(setq the-time (cadr (current-time)))
+(mandelbrot)
+(princ (format "Elapsed %d" (- (cadr (current-time)) the-time)))
+
+
+Applescript
+
+(* Applescript Version by Erik Wrenholt
+I couldn't figure out how to write to stdout
+so it buffers the output until the end. *)
+
+on unixTime()
+        (do shell script "date +%s") as integer
+end unixTime
+
+on iterate(x, y)
+        set BAILOUT to 16
+        set MAX_ITERATIONS to 1000
+
+        set cr to y - 0.5
+        set ci to x
+        set zi to 0.0
+        set zr to 0.0
+        set i to 0
+
+        repeat while i < MAX_ITERATIONS
+                set i to i + 1
+                set temp to zr * zi
+                set zr2 to zr * zr
+                set zi2 to zi * zi
+                set zr to zr2 - zi2 + cr
+                set zi to temp + temp + ci
+                if zi2 + zr2 > BAILOUT then
+                        return i
+                end if
+        end repeat
+        return 0
+end iterate
+
+set t to unixTime()
+
+set mandelbrotString to ""
+set nl to (ASCII character 10)
+repeat with y from -39 to 38 by 1
+        set mandelbrotString to mandelbrotString & nl
+        repeat with x from -39 to 38 by 1
+                if iterate(x / 40.0, y / 40.0) = 0 then
+                        set mandelbrotString to mandelbrotString & "*"
+                else
+                        set mandelbrotString to mandelbrotString & " "
+                end if
+        end repeat
+end repeat
+
+set elapsed to unixTime() - t
+mandelbrotString & nl & "Time Elapsed " & elapsed
+
+
+Io 20070410
+
+#!/usr/local/bin/IoServer
+# by Erik Wrenholt
+
+iterator := Object clone do (
+
+bailout := 16
+max_iterations := 1000
+
+mandelbrot := method (x,y,
+        cr := y - 0.5
+        ci := x
+        zi := 0.0
+        zr := 0.0
+        i := 0
+
+        while (1,
+                i = i + 1
+                temp := zr * zi
+                zr2 := zr * zr
+                zi2 := zi * zi
+                zr := zr2 - zi2 + cr
+                zi := temp + temp +ci
+
+                if (zi2 + zr2 > bailout,
+                        return i)
+                if (i > max_iterations,
+                        return 0)
+        )
+)
+
+print_set := method (
+        writeln("Rendering...")
+        for(y, -39, 38,
+                write("\n")
+                for(x, -39, 38,
+                        i := mandelbrot(x/40.0,y/40.0)
+                        if (i == 0, write("*"),write(" "))
+                )
+        )
+)
+)
+
+writeln
+writeln ("Io Elapsed " .. Date secondsToRun(iterator print_set))
+
+SBCL 1.0.2
+
+; sbcl lisp version by mandeep singh
+
+(declaim (optimize (speed 3)))
+
+(defconstant +BAILOUT+ 16)
+(defconstant +MAX-ITERATIONS+ 1000)
+
+(defun mandelbrot (x y)
+  (declare (type single-float x y))
+  (let ((cr (- y 0.5))
+        (ci x)
+        (zi 0.0)
+        (zr 0.0))
+    (declare (type single-float cr ci zi zr))
+    (do ((i 0 (incf i)))
+        (nil)
+      (let* ((temp (the single-float (* zr zi)))
+             (zr2 (the single-float (* zr zr)))
+             (zi2 (the single-float (* zi zi))))
+        (declare (type single-float temp zr2 zi2)
+                 (type fixnum i))
+        (setq zr (the single-float (+ (- zr2 zi2) cr)))
+        (setq zi (the single-float (+ temp temp ci)))
+        (if (> (the single-float (+ zi2 zr2)) +BAILOUT+)
+            (return-from mandelbrot i))
+        (if (> i +MAX-ITERATIONS+)
+            (return-from mandelbrot 0))))))
+
+(defun main ()
+   (let ((tstart)
+        (tfinish))
+     (setq tstart (get-internal-real-time))
+     (do ((y -39 (incf y)))
+         ((= (the fixnum y) 39))
+       (format t "~%")
+       (do ((x -39 (incf x)))
+           ((= (the fixnum x) 39))
+         (let ((i (mandelbrot (the single-float (/ x 40.0))
+                              (the single-float (/ y 40.0)))))
+           (declare (type fixnum i x y))
+        (if (zerop i)
+            (format t "*")
+            (format t " ")))))
+     (format t "~%")
+     (setq tfinish (get-internal-real-time))
+     (format t "SBCL Elapsed ~,2F~%" (coerce (/ (- tfinish tstart) internal-time-units-per-second) 'float))))
+
+(progn
+ (main)
+ (quit))
+
+
+Tags: ruby, python, java, php, lua, perl, benchmark, mandelbrot, fractal
+
+Timestretch ? ©2011 Erik Wrenholt | Login

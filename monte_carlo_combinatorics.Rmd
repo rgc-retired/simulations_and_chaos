@@ -1,0 +1,303 @@
+---
+title: "Simulations of Combinatorics"
+author: "R. G. Cronce"
+date: "July 29, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+These are a few examples of Monte Carlo simulations of combinatorics problems.  The author of the original article ported some Matlab code to R and then optimized it using R to show a more elegant solution.
+
+[Web Article](https://www.r-bloggers.com/simulating-data-in-r-examples-in-writing-modular-code/)
+
+[Original](https://www.markhw.com/blog/modular-sims)
+
+
+## Example 1: Clumsy Dishwasher
+
+RGC Editorial comment: I wish he had used a different value for the number of dishwashers and the number of broken dishes.  It leads to no confusion in the code - but there is no need to duplicate these numbers in an artificial example.
+
+
+Imagine five dishwashers (A, B, ..., E) work in a kitchen and all have equal abilities.  One week they collectively broke 5 dishes with dishwasher A responsible for 4 of them.  The others accused him of being clumsy but he said it could happen to any of them.  What is the likelihood that this is due to dumb luck?
+
+```{r}
+iter <- 5000000    # Number of random trials
+n <- 5             # Number of dishwashers
+k <- 5             # Number of dish breaks
+
+t1<-Sys.time()
+# The Matlab code ported to R
+set.seed(1839)
+clumsy <- 0
+# For each iteration
+for (zzz in seq_len(iter)) {
+  broken_dishes <- 0
+  # For each broken dish
+  for (yyy in seq_len(k)) {
+    r <- runif(1)
+    # If it was broken by dishwasher A keep a count
+    if (r < (1/n)) {
+      broken_dishes <- broken_dishes+1
+    }
+  }
+  # For this trial - see if dishwasher A was clumsy
+  if (broken_dishes>3) {
+    clumsy <- clumsy+1
+  }
+}
+t2<-Sys.time()
+# Report the results
+clumsy/iter
+t2-t1
+```
+
+We can conclude that the observed result is quite unlikely.  Breaking more than 3 dishes should occur less than 1% of the time based on random chance if the five dishwashers are equally capable.
+
+Code takes a while to run but it is pretty easy to understand.  The nested loops are a bit ugly.
+
+The author then ported this to a more modular set of routines as given below.  Note the use of the ellipsis to pass an arbitrary set of arguments through to a lower level function.
+
+```{r}
+# simulate k dishwashers making n breaks in a week:
+sim_breaks <- function(n, k) {
+  sample(letters[seq_len(k)], n, replace = TRUE)
+}
+# get the number of breaks done by the target person:
+a_breaks <- function(...) {
+  sum(sim_breaks(...) == "a")
+}
+# how often will dishwasher a be responsible for 4 or 5 breaks?
+t1<-Sys.time()
+set.seed(1839)
+result <- sapply(seq_len(iter), function(zzz) a_breaks(n, k) > 3)
+t2<-Sys.time()
+mean(result)
+t2-t1
+```
+
+This runs a bit faster (about 31 seconds) at the *expense* of generating a full vector of results.  The code is cleaner and it is very easy to understand.
+
+The result should be identical since it uses the same logic and the same random number generators.
+
+Finally, we generate random numbers with binomial distribution and calculate the percentage of cases that exceed 3.  This should run at *native* C speed and be much faster.  The code has been slightly modified from the website to save the results like above:
+
+```{r}
+t1<-Sys.time()
+set.seed(1839)
+result2 <- (rbinom(iter,k,1/n)>3)
+mean(result2)
+t2<-Sys.time()
+t2-t1
+```
+
+Clearly this runs must faster (approx 100X) but it yields a slightly different value since it uses the binomial distribution random number generator instead of the uniform random number generator.  The difference is small (0.00672 versus 0.00674).
+
+We can use pbinom(3,5,1/5,lower.tail=FALSE) to calculate the closed form solution.  This yields 0.00672 as the correct result.
+
+We can make a simple frame showing these probabilities:
+
+```{r}
+d <- data.frame(num_breaks=seq(0,k))
+d$prob <- dbinom(d$num_breaks,k,1/n)
+d$cdf  <- pbinom(d$num_breaks,k,1/n,lower.tail=FALSE)
+d
+```
+
+The cdf column indicates the probability of one dishwasher breaking more than num_breaks dishes.  In this case, the entry for num_breaks=3 shows a cumulative likelihood of 0.00672 as noted above.  This is the sum of the probabilities for num_breaks=4 (0.00640) and num_breaks=5 (0.00032).
+
+It is interesting to note there is about a 2/3 probability that a dishwasher will break at least one dish - even if they aren't clumsy.
+
+In general the probability of x successes in n trials with a success probability of p is given by:
+
+$$P(x,n,p)={n \choose x} p^x (1-p)^{n-x}$$
+
+This same formula is given in the R help for dbinom.
+
+
+## Example 2: Curious Coin Flip Game
+
+From the Website:
+
+Nahin tells us that this was originally a challenge question from the August-September 1941 issue of American Mathematical Monthly, and it was not solved until 1966. Imagine there are three people playing a game. Each of these three people have a specific number of quarters. One person has L quarters, another has M quarters, and another has N quarters. Each round involves all three people flipping one of their quarters. If all three coins come up the same (i.e., three heads or three tails), then nothing happens during that round. Otherwise, two of the players will have their coins come up the same, and one person will be different. The one that is different takes the other two players coins from that round.
+
+So, for example, let's say George has 3 quarters, Elaine has 3 quarters, and Jerry has 3 quarters. They all flip. George and Elaine get heads, while Jerry gets tails. George and Elaine would give those quarters to Jerry. So after that round, George and Elaine would have 2 quarters, while Jerry would have 5.
+
+When someone runs out of coins, they lose the game. The challenge is to find the average number of rounds it takes until someone loses the game (i.e., runs out of coins). We are tasked with doing this at various values of initial starting quarter coins of L, M, and N. 
+
+The author's code does not work (it has missing sections) and I find the table manipulations very confusing.  I have rewritten the code to work and removed the table manipulations.
+
+```{r}
+sim_flips <- function(p) {
+  rbinom(3, 1, p)
+}
+
+# This function appears to be incomplete and confusing.
+# I had to remove the empty if statement to make it run at all.
+# In addition, it is an order of magnitude slower than simply checking for odd-man-out.
+# With iter=100K the time difference is nearly 36X slower.
+#
+# sim_winner <- function(...) {
+#   x <- sim_flips(...)
+#   x <- which(x == as.numeric(names(table(x))[table(x) == 1]))
+# }
+
+
+# I changed it as follows
+#
+sim_winner <- function(...) {
+  x <- sim_flips(...)
+  if (sum(x==0)==1) {
+    retval=which(x==0)
+  } else if (sum(x==1)==1) {
+    retval=which(x==1)
+  } else {
+    retval=NULL
+  }
+  return(retval)
+}
+
+sim_game <- function(l, m, n, ...) {
+  lmn <- c(l, m, n)
+  counter <- 0
+  while (all(lmn > 0)) {
+    winner <- sim_winner(...)
+    if (!is.null(winner)) {
+      lmn[winner] <- lmn[winner] + 2
+      lmn[-winner] <- lmn[-winner] - 1
+    }
+    counter <- counter + 1
+  }
+  return(counter)
+}
+
+set.seed(1839)
+t1 <- Sys.time()
+iter <- 100000 # setting lower iter, since this takes longer to run
+results <- sapply(seq_len(iter), function(zzz) {
+  c(
+    sim_game(1, 2, 3, .5),
+    sim_game(2, 3, 4, .5),
+    sim_game(3, 3, 3, .5),
+    sim_game(4, 7, 9, .5)
+  )
+})
+t2 <- Sys.time()
+rowMeans(results)
+t2-t1
+```
+
+Again from the website:
+
+These values are practically the same as the theoretical, mathematically-derived solutions of 2, 4.5714, 5.1428, and 18.6667. I find creating the functions and then running them repeatedly through the sapply function to be cleaner, more readable, and easier to adjust or debug than using a series of nested for loops, while loops, and if else statements.
+
+
+
+## Example 3: Gamow-Stern Elevator Game
+
+From the website:
+
+As a last example, consider physicists Gamow and Stern. They both had an office in a building seven stories tall. The building had just one elevator. Gamow was on the second floor, Stern on the sixth. Gamow often wanted to visit his colleague Stern and vice versa. But Gamow felt like the elevator was always going down when it first got to his floor, and he wanted to go up. Stern, ostensibly paradoxically, always felt like the elevator was going up when he wanted to go down. Assuming that the elevator is going up-and-down all day, this makes sense: 5/6 of the other floors relative to Gamow (on the second floor) were above him, so 5/6 of the time the elevator would be on its way down. And the same is true for Stern, albeit in the opposite direction.
+
+Nahin tells us, then, that the probability that the elevator is going down when it gets to Gamow on the second floor is 5/6 (.83333). Interestingly, Gamow and Stern wrote that this probability holds when there is more than one elevator - but they were mistaken. Nahin challenges us to find the probability in the case of two and three elevators.
+
+The code from the website is given below.  Note that for the case of multiple elevators the code will select the elevator that is nearest the person pressing the button.  In the event there are elevators that are equi-distant, the elevator is selected at random since it is simply the first one found in the sampling process.  As the number of elevators gets large there will likely be an elevator one floor above and below the rider.  In that event, the direction should be equiprobable so we expect these results to asymptotically approach P(going down)=0.5.
+
+```{r}
+#' Simulate the Floor on Elevator Was On, and What Direction It Is Going
+#' 
+#' Given the floor someone is on and the total number of floors in the building,
+#' this function returns to a user (a) what floor the elevator was on when
+#' a potential passenger hits the button and (b) if the elevator is on its way
+#' up or down when it reaches the potential passenger.
+#'
+#' @param f The floor a someone wanting to ride the elevator is on
+#' @param h The total number of floors in the building; its height
+#' @return A named numeric vector, indicating where the elevator started from
+#' when the person waiting hit the button as well as if the elevator is going
+#' down when it reaches that person (1 if yes, 0 if not)
+sim_lift <- function(f, h) {
+  floors <- 1:h
+  start <- sample(floors[floors != f], 1)
+  going_down <- start > f
+  return(c(start = start, going_down = going_down))
+}
+
+#' Simulate Direction of First-Arriving Elevator
+#' 
+#' This function uses sim_lift to simulate N number of elevators. It takes the
+#' one closest to the floor of the person who hit the button and returns
+#' whether (1) or not (0) that elevator was going down.
+#' 
+#' @param n Number of elevators
+#' @param f The floor a someone wanting to ride the elevator is on
+#' @param h The total number of floors in the building; its height
+#' @return 1 if the elevator is on its way down or 0 if its on its way up
+sim_gs <- function(n, f, h) {
+  tmp <- sapply(seq_len(n), function(zzz) sim_lift(f, h))
+  return(tmp[2, which.min(abs(tmp["start", ] - f))])
+}
+
+```
+
+The author then checks the code for sanity by making sure the expected 5/6 value occurs:
+
+```{r}
+set.seed(1839)
+iter <- 2000000
+mean(sapply(seq_len(iter), function(zzz) sim_lift(2, 7)[[2]]))
+```
+
+As expected, when calling the elevator on floor 2 of a 7 story building the likelihood that the elevator is above you is 5/7 and the likelihood it is below you is 1/7.  The relative probability is, therefore, 5/6 that the elevator is coming down to you when it arrives.
+
+The next step is to consider the possibility of 2 or 3 elevators.
+
+```{r}
+t1 <- Sys.time()
+set.seed(1839)
+results <- sapply(seq_len(iter), function(zzz) {
+  c(sim_gs(2, 2, 7), sim_gs(3, 2, 7))
+})
+t2 <- Sys.time()
+row.names(results) <- c("2 Elevators","3 Elevators")
+rowMeans(results)
+t2-t1
+```
+
+Apparently there is a theoretically known result that matches quite nicely:
+
+    * For 2 elevators: 0.72222
+    * For 3 elevators: 0.648148
+    
+As an editorial comment: either the blog author has a tremendously fast computer or doesn't care about run time.  These simulations seem to take a very long time.
+
+Note that this can be expanded to more floors in a very simple manner:
+
+```{r}
+iter <- 100000
+t1 <- Sys.time()
+num_elevators <- seq_len(15)
+set.seed(1839)
+results <- sapply(seq_len(iter), function(zzz) {
+  sapply(num_elevators, function(xxx) {
+    sim_gs(xxx,2,7)
+  })
+})
+t2 <- Sys.time()
+row.names(results) <- paste(num_elevators,"Elevators")
+rowMeans(results)
+t2-t1
+
+plot(num_elevators,rowMeans(results),type='b',
+     ylim=c(0.5,0.9),
+     ylab="P(going down)",
+     main="Probability that Elevator is Going Down")
+abline(h=5/6,col="red",lwd=2)
+abline(h=1/2,col="red",lwd=2)
+grid()
+```
+

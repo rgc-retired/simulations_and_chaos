@@ -1,0 +1,54 @@
+---
+title: "Sierpinski Gasket"
+author: "R. G. Cronce"
+date: "10/1/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Sierpinski Gasket
+
+Aka the Sierpinski triangle - one of the simplest fractal shapes that can be generated.
+Start with an equilateral triangle and remove the center formed by connecting the midpoints
+of each of the sides.  The result is three smaller equilateral triangles surrounding an
+upside down triangle.  Repeat the process for each of the three outer triangles and recurse.
+
+An alternate implementation is based on a stochastic process.  Fix the three vertices of
+the generating triangle and a random starting point.  At each step, select one of the
+three vertices at random and move half-way to the corresponding vertex.  Plot a point
+and repeat ad nauseum.  As the number of points is increased the gasket will "magically"
+appear.
+
+```{r}
+# Create vertices for equilateral triangle with unit sides
+x=c(0,0.5,1)
+y=c(0,sqrt(3)/2,0)
+
+# Make the response repeatable
+set.seed(42)
+
+# Generate a random starting point
+xval=runif(1)
+yval=runif(1)
+
+# Iterate to create a large number of points
+xxx=c()
+yyy=c()
+for (i in 1:10000) {
+d=sample(3,1)
+xval=(xval+x[d])/2
+yval=(yval+y[d])/2
+xxx=c(xxx,xval)
+yyy=c(yyy,yval)
+}
+
+# Plot the results (suppress display of the axes)
+par(mar=c(0,0,1,0))
+plot(xxx,yyy,pch=15,cex=0.5,asp=1,main='Sierpinski Gasket')
+
+```
+
+This is the typical Sierpinski Gasket (Triangle).

@@ -1,0 +1,142 @@
+---
+title: "Avalanche"
+author: "R. G. Cronce"
+date: "9/28/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+*WARNING: Creating data takes a few minutes*
+
+## Avalanche Simulation
+
+This is an implementation of a toy avalanche simulation described in the
+book *Deep Simplicity: Bringing Order to Chaos and Complexity* by John Gribbin
+(published 2004, ISBN 0-7394-6008-0, see p. 171-2).  The toy avalanche is meant
+to illustrate some of the problems seen in real avalanches in sand piles (or rice piles)
+and is performed as follows:
+
+1. Start with NxN grid where each cell contains 0-3 items (e.g. blocks or checkers)
+2. Randomly select one cell and add 1 item
+3. If the total reaches 4, then an avalanche has started.  Distribute the four
+   items to the four neighbors (NSEW).  This, of course, can propagate to
+   additional avalanches.  At the edges of the array the values just fall off
+   the table.  The number of cells that experience an avalanche is the size
+   of the avalanche.
+4. Examine the power law dependence between the size of the avalance and the
+   frequency of occurrence.
+
+```{r}
+# Make the simulation repeatable
+set.seed(42)
+
+t1=Sys.time()
+
+# Size of the grid is NxN
+N=50
+s=matrix(sample(0:3,N*N,replace=T),nrow=N,ncol=N)
+
+# Number of trials is the number of times a new token is added to the grid
+# One such addition can result in a large number of avalanche motions.  These
+# are all part of one trial.
+Ntrial=100000
+
+x=rep(0,Ntrial)
+y=rep(0,Ntrial)
+
+m=0   # Number of times an avalance has occurred, cumulative
+num_frames=0  # number of image frames
+
+for (trial in seq(Ntrial)) {
+  x[trial]=trial
+  r=sample(N,1); c=sample(N,1)
+  sold=s
+  s[r,c]=s[r,c]+1
+  # Propagate the avalanche
+  while (any(s>3)) {
+    k=which(s>3)[1]-1
+    c=as.integer(k/N)+1
+    r=(k%%N)+1
+    s[r,c]=s[r,c]-4
+    m=m+1
+    if (r>1) { s[r-1,c]=s[r-1,c]+1 }
+    if (c>1) { s[r,c-1]=s[r,c-1]+1 }
+    if (r<N) { s[r+1,c]=s[r+1,c]+1 }
+    if (c<N) { s[r,c+1]=s[r,c+1]+1 }
+  }
+  y[trial]=m
+  if (num_frames<100 && trial>1) {
+    if ( (y[trial]-y[trial-1]) >= (3878)) {
+      outfile=sprintf("frame%03d.png",num_frames)
+      png(outfile)
+      sold=abs(s-sold)
+      savalanche=sold
+      image(sold,col=c('white','yellow','orange','red'))
+      dev.off()
+      num_frames=num_frames+1
+    }
+  }
+}
+
+t2=Sys.time()
+
+t2-t1
+
+```
+
+## Plotting the Simulation
+
+Once the simulation is complete we can look at the power law dependence below.
+
+```{r}
+# Look at the actual avalanches
+zzz=diff(y); zzz=zzz[zzz>0]
+d=as.data.frame(table(zzz),stringsAsFactors=F)
+colnames(d)=c('x','y')
+d$x=as.numeric(d$x)
+d$y=d$y/sum(d$y)
+plot(d$x,d$y,pch=19,log='xy',xlab='Size of Avalance',ylab='Number of Avalanches')
+title('Toy Avalanche Simulation, 100K trials')
+grid()
+# For the linear approximation:
+#
+# Look at the first two decades of response -- larger avalanches are very rare
+# so the fit doesn't quite follow a power law unless a very large number of trials
+# are performed.
+d2=d[d$x<=100,]
+m=lm(log(y)~log(x),d2)
+xnew=c(1,10000)
+ynew=exp(predict(m,data.frame(x=xnew)))
+lines(xnew,ynew,col='red',lwd=3)
+
+```
+
+Since we get a nominally straight line on a log-log plot it is clear that there
+is a power law in effect.
+
+In addition to the log-log line plot -- the largest 100 avalanches have been turned
+into images showing the before/after change due to adding a single element to the grid.
+Cells that are unchanged are white, small changes are yellow and large changes are red.
+These can be viewed as static images or played in a video loop -- although they are
+not really sequential (these are before/after images of 100 different avalanches).
+
+```{r}
+image(savalanche,col=c('white','yellow','orange','red'))
+```
+
+
+The equation for the power law can be teased from the regression summary:
+
+```{r}
+summary(m)
+```
+
+So: log(y) = -1.921453 - 1.034406*log(x)
+
+or: y ~ 0.1463941/(x^1.0344)
+
+Which is, essentially, 1/f.
+

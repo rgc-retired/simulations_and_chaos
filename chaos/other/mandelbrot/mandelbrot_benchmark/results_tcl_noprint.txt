@@ -1,0 +1,10 @@
+Tcl_noprint Elapsed 20.807
+Tcl_noprint Elapsed 20.804
+Tcl_noprint Elapsed 20.8
+Tcl_noprint Elapsed 20.799
+Tcl_noprint Elapsed 20.798
+Tcl_noprint Elapsed 20.791
+Tcl_noprint Elapsed 20.789
+Tcl_noprint Elapsed 20.795
+Tcl_noprint Elapsed 20.793
+Tcl_noprint Elapsed 20.792

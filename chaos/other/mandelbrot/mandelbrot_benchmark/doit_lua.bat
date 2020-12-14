@@ -1,0 +1,10 @@
+call lua mandelbrot.lua >  laptop_results_lua.txt
+call lua mandelbrot.lua >> laptop_results_lua.txt
+call lua mandelbrot.lua >> laptop_results_lua.txt
+call lua mandelbrot.lua >> laptop_results_lua.txt
+call lua mandelbrot.lua >> laptop_results_lua.txt
+call lua mandelbrot.lua >> laptop_results_lua.txt
+call lua mandelbrot.lua >> laptop_results_lua.txt
+call lua mandelbrot.lua >> laptop_results_lua.txt
+call lua mandelbrot.lua >> laptop_results_lua.txt
+call lua mandelbrot.lua >> laptop_results_lua.txt

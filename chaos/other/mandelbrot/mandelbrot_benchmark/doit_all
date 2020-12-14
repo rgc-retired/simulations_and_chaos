@@ -1,0 +1,11 @@
+#
+source doit_lua
+source doit_perl1
+source doit_tcl
+source doit_perl2
+source doit_python
+source doit_ruby
+#
+source doit_lua_noprint
+source doit_tcl_noprint
+#
